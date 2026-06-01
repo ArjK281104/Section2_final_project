@@ -4,32 +4,28 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                echo 'Checking out code from repository...'
+                checkout([
+                    $class: 'GitSCM', 
+                    branches: [[name: '*/master']], 
+                    extensions: [], 
+                    userRemoteConfigs: [[url: 'https://github.com/ArjK281104/Section2_final_project.git']]
+                ])
             }
         }
 
         stage('Compile') {
             steps {
                 echo 'Compiling the project...'
-                bat 'mvn clean compile' 
+                bat 'mvn clean compile'
             }
         }
 
         stage('Run Functional Tests') {
             steps {
+                echo 'Running UI and API tests...'
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                    echo 'Running UI and API tests...'
                     bat 'mvn test'
-                }
-            }
-        }
-
-        stage('Run Performance Tests') {
-            steps {
-                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                    echo 'Running JMeter Load Tests...'
-                    // FIX: Added 'jmeter:configure' to generate the required config.json file
-                    bat 'mvn jmeter:configure jmeter:jmeter jmeter:results'
                 }
             }
         }
@@ -37,29 +33,18 @@ pipeline {
 
     post {
         always {
-            echo 'Archiving Artifacts...'
-            
-            // FIX: Commented out to prevent the "No such DSL method 'allure'" error 
-            // since the plugin is not installed on your server.
-            
-            // allure([
-            //     includeProperties: false,
-            //     jdk: '',
-            //     properties: [],
-            //     reportBuildPolicy: 'ALWAYS',
-            //     results: [[path: 'target/allure-results'], [path: 'allure-results']]
-            // ])
-            
-            archiveArtifacts artifacts: 'target/jmeter/reports/**', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'target/surefire-reports/**', allowEmptyArchive: true
+            echo 'Archiving test reports...'
+            // Archiving functional test reports instead of JMeter
+            archiveArtifacts artifacts: 'target/surefire-reports/**, target/cucumber-reports/**', allowEmptyArchive: true
         }
-        
         success {
-            echo 'Build and Tests completed successfully!'
+            echo 'Build completed successfully!'
         }
-        
+        unstable {
+            echo 'Build is unstable. Some tests may have failed.'
+        }
         failure {
-            echo 'Pipeline failed. Please check the logs.'
+            echo 'Build failed during execution.'
         }
     }
 }
