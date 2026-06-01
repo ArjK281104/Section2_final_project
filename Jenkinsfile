@@ -11,7 +11,6 @@ pipeline {
         stage('Compile') {
             steps {
                 echo 'Compiling the project...'
-                // Changed from 'sh' to 'bat' for Windows execution
                 bat 'mvn clean compile' 
             }
         }
@@ -20,7 +19,6 @@ pipeline {
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     echo 'Running UI and API tests...'
-                    // Changed from 'sh' to 'bat'
                     bat 'mvn test'
                 }
             }
@@ -30,8 +28,8 @@ pipeline {
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     echo 'Running JMeter Load Tests...'
-                    // Changed from 'sh' to 'bat'
-                    bat 'mvn jmeter:jmeter jmeter:results'
+                    // FIX: Added 'jmeter:configure' to generate the required config.json file
+                    bat 'mvn jmeter:configure jmeter:jmeter jmeter:results'
                 }
             }
         }
@@ -39,16 +37,18 @@ pipeline {
 
     post {
         always {
-            echo 'Generating Reports and Archiving Artifacts...'
+            echo 'Archiving Artifacts...'
             
-            // This step requires the Allure Jenkins Plugin to be installed
-            allure([
-                includeProperties: false,
-                jdk: '',
-                properties: [],
-                reportBuildPolicy: 'ALWAYS',
-                results: [[path: 'target/allure-results'], [path: 'allure-results']]
-            ])
+            // FIX: Commented out to prevent the "No such DSL method 'allure'" error 
+            // since the plugin is not installed on your server.
+            
+            // allure([
+            //     includeProperties: false,
+            //     jdk: '',
+            //     properties: [],
+            //     reportBuildPolicy: 'ALWAYS',
+            //     results: [[path: 'target/allure-results'], [path: 'allure-results']]
+            // ])
             
             archiveArtifacts artifacts: 'target/jmeter/reports/**', allowEmptyArchive: true
             archiveArtifacts artifacts: 'target/surefire-reports/**', allowEmptyArchive: true
