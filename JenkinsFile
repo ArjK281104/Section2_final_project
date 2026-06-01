@@ -6,6 +6,7 @@ pipeline {
     //     maven 'Maven3' // Must match the name in your Jenkins config
     //     jdk 'Java11'   // Must match the name in your Jenkins config
     // }
+    //
 
     stages {
         stage('Checkout') {
